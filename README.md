@@ -26,3 +26,6 @@ To get help for the program, simply run at the command line with the --help opti
 
   --version        Display version information.
 
+## Build Order
+
+If you have multiple builds defined for a project, you can set the build order by adding a variable to each build called *buildOrder* (Lowest number build first)
