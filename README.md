@@ -3,7 +3,7 @@ A windows CLI program that connects to AzureDevops and will trigger a build when
 
 Having failed to get the CI trigger for my Azure Devops builds to work with my VisualSVN repository I wrote this small utility to help document the issue for Microsoft.
 
-So, whilst triggering manual builds works perfectly, scheduled builds work fine too - it is just the CI trigger in Azure DevOps that does nothing.
+So, whilst triggering manual builds works perfectly, scheduled builds work fine too - it is just the CI trigger in Azure DevOps that does nothing. After much help from the great team at Microsoft, the problem is caused by the structure of my SVN respository - this utility saves me from restructuring the complete repository.
 
 ## SvnCI-Trigger
 
@@ -26,3 +26,6 @@ To get help for the program, simply run at the command line with the --help opti
 
   --version        Display version information.
 
+## Build Order
+
+If you have multiple builds defined for a project, you can set the build order by adding a variable to each build called *buildOrder* (Lowest number build first)
