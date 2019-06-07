@@ -16,7 +16,7 @@ namespace SvnCITrigger
         internal string svnuser = "";
         internal string svnpasssword = "";
 
-        public AzureSubversionCiController(string ProjectName, string svnUser, string svnPassword,string DevOpsUrl="", string PAT="")
+        public AzureSubversionCiController(string ProjectName, string svnUser, string svnPassword, string DevOpsUrl = "", string PAT = "")
         {
             projectName = ProjectName;
             svnuser = svnUser;
@@ -52,14 +52,15 @@ namespace SvnCITrigger
             }
 
             SortedList<int, BuildDefinition> buildIsNeeded = new SortedList<int, BuildDefinition>();
-           
+
 
             foreach (BuildDefinition buildDef in buildDefinitions)
             {
+                bool ignoreDefintion = true;
+
                 if (buildDef.Repository != null && buildDef.Repository.Type == "Svn")
                 {
                     // get last version from the repository
-                    long lastRepositoryVersion = GetLatestCheckinVersion(buildDef.Repository.Id, buildDef.Repository.DefaultBranch);
 
                     int buildOrder = 0;
                     if (buildDef.Variables.ContainsKey("buildOrder"))
@@ -73,22 +74,38 @@ namespace SvnCITrigger
 
                     }
 
-                    // get last version from builds
-                    Task<List<Microsoft.TeamFoundation.Build.WebApi.Build>> taskBuildList = Task.Run(() => buildClient.GetBuildsAsync(projectName, new List<int> { buildDef.Id }));
-                    taskBuildList.Wait();
-
-                    Microsoft.TeamFoundation.Build.WebApi.Build latestBuild = taskBuildList.Result[0] as Microsoft.TeamFoundation.Build.WebApi.Build;
-                    if (latestBuild != null)
+                    if (buildDef.Variables.ContainsKey("buildCI"))
                     {
-                        if (Convert.ToInt64(latestBuild.SourceVersion) < lastRepositoryVersion)
+                        BuildDefinitionVariable bvBuildCi = null;
+                        if (buildDef.Variables.TryGetValue("buildCI", out bvBuildCi))
                         {
-                            Console.WriteLine(string.Format("Build is required for {0} - last built version {1} last checkin version {2}", buildDef.Name, latestBuild.SourceVersion, lastRepositoryVersion));
-                            buildIsNeeded.Add(buildOrder,buildDef);
+                            ignoreDefintion = !Convert.ToBoolean(bvBuildCi.Value);
+
                         }
-                        else
+                    }
+
+                    if (!ignoreDefintion)
+                    {
+                        long lastRepositoryVersion = GetLatestCheckinVersion(buildDef.Repository.Id, buildDef.Repository.DefaultBranch);
+
+                        // get last version from builds
+                        Task<List<Microsoft.TeamFoundation.Build.WebApi.Build>> taskBuildList = Task.Run(() => buildClient.GetBuildsAsync(projectName, new List<int> { buildDef.Id }));
+                        taskBuildList.Wait();
+
+                        Microsoft.TeamFoundation.Build.WebApi.Build latestBuild = taskBuildList.Result[0] as Microsoft.TeamFoundation.Build.WebApi.Build;
+                        if (latestBuild != null)
                         {
-                            Console.WriteLine(string.Format("Build is up to date for {0} - last built version {1} last checkin version {2}", buildDef.Name, latestBuild.SourceVersion, lastRepositoryVersion));
+                            if (Convert.ToInt64(latestBuild.SourceVersion) < lastRepositoryVersion)
+                            {
+                                Console.WriteLine(string.Format("Build is required for {0} - last built version {1} last checkin version {2}", buildDef.Name, latestBuild.SourceVersion, lastRepositoryVersion));
+                                buildIsNeeded.Add(buildOrder, buildDef);
+                            }
+                            else
+                            {
+                                Console.WriteLine(string.Format("Build is up to date for {0} - last built version {1} last checkin version {2}", buildDef.Name, latestBuild.SourceVersion, lastRepositoryVersion));
+                            }
                         }
+
                     }
 
                 }
