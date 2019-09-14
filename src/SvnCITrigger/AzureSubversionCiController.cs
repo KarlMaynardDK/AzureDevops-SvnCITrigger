@@ -117,7 +117,7 @@ namespace SvnCITrigger
             {
                 Console.WriteLine(string.Format("Triggering build for {0}", buildDef.Name));
 
-                Build build = new Build() { Definition = buildDef, Project = buildDef.Project };
+                Build build = new Build() { Definition = buildDef, Project = buildDef.Project, Reason = BuildReason.IndividualCI };
                 Task<Build> taskBuild = Task.Run(() => buildClient.QueueBuildAsync(build));
                 taskBuild.Wait();
 
